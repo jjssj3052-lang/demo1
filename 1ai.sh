@@ -191,9 +191,9 @@ install_dependencies() {
 }
 
 #==============================================================================
-# ЗАПУСК ГЛАВНОЙ ФУНКЦИИ
+# ЗАПУСК ГЛАВНОЙ ФУНКЦИИ main
 #==============================================================================
-main "$@"M:%S')] Proveryayu i ustanavlivayu zavisimosti..."
+ "Proveryayu i ustanavlivayu zavisimosti..."
     
     if ! command -v wget &> /dev/null; then
         echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Ustanavlivayu wget..."
